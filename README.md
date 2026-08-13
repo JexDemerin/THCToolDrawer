@@ -158,7 +158,8 @@ src/background/            service worker: sync, launching, routing
 src/content/mount.js       injects the drawer into pages
 src/drawer/                the panel UI and the admin editor
 src/options/               settings: catalog URL, publishing
-tools/make-icons.py        regenerates icons/
+icons/icon.svg             the extension mark (source of truth)
+tools/render-icons.mjs     renders icon.svg to the PNG sizes Chrome needs
 tools/test.mjs             tests for the logic modules
 config.example.json        a filled-in catalog to copy from
 ```
@@ -174,7 +175,7 @@ because the panel is framed from a web page; the files hold no secrets.
 
 ```bash
 node tools/test.mjs        # catalog normalising, site matching, templating, password gate
-python3 tools/make-icons.py # regenerate icons after changing the mark
+node tools/render-icons.mjs # regenerate PNGs after editing icons/icon.svg
 ```
 
 The `chrome.*` layers are verified by loading the unpacked extension — Chrome's

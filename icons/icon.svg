@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128"
+     role="img" aria-label="THC Tool Drawer">
+  <!--
+    Together Homecare — Tool Drawer extension icon.
+
+    Built to sit in the same set as Shift Verification and Text Blaster:
+    a Dusty Rose squircle, a flat white object, one rose detail inside it.
+
+    The object is a two-drawer unit, which names the thing rather than
+    describing a generic list. White on #AC6B75 measures 4.1:1 — under the
+    threshold for text, comfortably over the 3:1 one for graphics, which is
+    what applies here.
+  -->
+  <rect width="128" height="128" rx="30" fill="#AC6B75"/>
+
+  <!-- the drawer unit -->
+  <rect x="26" y="24" width="76" height="80" rx="9" fill="#FFFFFF"/>
+
+  <!-- divider between the two drawers -->
+  <rect x="26" y="61.5" width="76" height="5" fill="#AC6B75"/>
+
+  <!-- handles -->
+  <rect x="51" y="40" width="26" height="5" rx="2.5" fill="#AC6B75"/>
+  <rect x="51" y="83" width="26" height="5" rx="2.5" fill="#AC6B75"/>
+</svg>
