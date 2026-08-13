@@ -9,20 +9,26 @@
   <body>
     <div class="wrap">
       <header>
-        <h1>THC Tool Drawer</h1>
-        <p class="sub">Settings for this browser. <span id="version-tag"></span></p>
+        <p class="eyebrow">Together Homecare</p>
+        <h1>Tool Drawer settings</h1>
+        <p class="lede">
+          Settings for this browser. The tools themselves live in the spreadsheet — a super
+          admin edits them there, or from inside the panel.
+        </p>
       </header>
 
       <section class="card">
-        <h2>Catalog</h2>
+        <h2>Spreadsheet connection</h2>
         <p class="copy">
-          Where this browser pulls the shared button list from. Everyone on the team points at the
-          same URL; when a super admin publishes, the buttons update on their own — no reinstall.
+          The Apps Script web app link, ending in <code>/exec</code>. Everyone on the team
+          points at the same one; when a super admin changes a tool, every drawer picks it up
+          on its own.
         </p>
 
         <label>
-          <span>Catalog URL</span>
-          <input id="config-url" type="url" placeholder="https://gist.githubusercontent.com/…/thc-tool-drawer.json" />
+          <span>Web app link</span>
+          <input id="endpoint" type="url"
+            placeholder="https://script.google.com/macros/s/…/exec" />
         </label>
 
         <div class="row">
@@ -32,115 +38,53 @@
           </label>
           <label class="check">
             <input id="sync-on-open" type="checkbox" />
-            <span>Also check whenever the drawer is opened</span>
+            <span>Also check whenever the panel is opened</span>
           </label>
         </div>
 
         <div class="actions">
-          <button id="btn-save-sync" class="primary" type="button">Save</button>
-          <button id="btn-sync-now" type="button">Check now</button>
+          <button id="btn-save" class="primary" type="button">Save</button>
+          <button id="btn-test" type="button">Test connection</button>
+          <button id="btn-sync" type="button">Check for tools now</button>
         </div>
-        <p id="sync-status" class="status"></p>
+        <p id="status" class="status"></p>
+        <pre id="ping" class="ping" hidden></pre>
       </section>
 
       <section class="card">
-        <h2>Publishing <span class="lock-tag" id="publish-lock">super admin</span></h2>
+        <h2>What is stored here</h2>
         <p class="copy">
-          Only needed on the machine that maintains the catalog. Everyone else can leave this alone.
+          The tool list, so the panel opens instantly and still works if the network is down.
+          Nothing else. The super-admin password is checked by the spreadsheet and is never
+          written to this browser's disk — it is held in memory for 30 minutes after an unlock
+          and cleared when Chrome closes.
         </p>
-
-        <div id="publish-gate">
-          <label>
-            <span>Super-admin password</span>
-            <input id="admin-password" type="password" autocomplete="current-password" />
-          </label>
-          <div class="actions">
-            <button id="btn-unlock" class="primary" type="button">Unlock</button>
-          </div>
-          <p id="unlock-status" class="status"></p>
-        </div>
-
-        <div id="publish-panel" hidden>
-          <label>
-            <span>Publish to</span>
-            <select id="publish-target">
-              <option value="manual">Download the file (I host it myself)</option>
-              <option value="gist">GitHub Gist</option>
-              <option value="http">My own endpoint</option>
-            </select>
-          </label>
-
-          <div data-target="gist">
-            <label>
-              <span>Gist ID</span>
-              <input id="gist-id" type="text" placeholder="e.g. 4f3a1c9b2d…" />
-            </label>
-            <label>
-              <span>File name inside the gist</span>
-              <input id="gist-filename" type="text" placeholder="thc-tool-drawer.json" />
-            </label>
-            <label>
-              <span>GitHub token (scope: gist)</span>
-              <input id="gist-token" type="password" placeholder="github_pat_…" />
-            </label>
-            <p class="hint">
-              The token stays in this browser's local storage and is never written into the
-              published catalog. Use a fine-grained token limited to gists.
-            </p>
-          </div>
-
-          <div data-target="http">
-            <label>
-              <span>Endpoint URL</span>
-              <input id="http-url" type="url" placeholder="https://intranet.example.org/tool-drawer.json" />
-            </label>
-            <div class="row">
-              <label class="narrow">
-                <span>Method</span>
-                <select id="http-method">
-                  <option>PUT</option>
-                  <option>POST</option>
-                </select>
-              </label>
-              <label>
-                <span>Header name</span>
-                <input id="http-header-name" type="text" placeholder="Authorization" />
-              </label>
-              <label>
-                <span>Header value</span>
-                <input id="http-header-value" type="password" placeholder="Bearer …" />
-              </label>
-            </div>
-          </div>
-
-          <div class="actions">
-            <button id="btn-save-publish" class="primary" type="button">Save</button>
-            <button id="btn-publish-now" type="button">Publish catalog now</button>
-          </div>
-          <p id="publish-status" class="status"></p>
-
-          <hr />
-
-          <h3>Catalog file</h3>
-          <div class="actions">
-            <button id="btn-export" type="button">Export</button>
-            <button id="btn-import" type="button">Import…</button>
-            <input id="import-file" type="file" accept="application/json,.json" hidden />
-          </div>
-          <p id="io-status" class="status"></p>
-        </div>
-      </section>
-
-      <section class="card">
-        <h2>Where the drawer appears</h2>
-        <p class="copy">
-          Site rules travel with the catalog, so a super admin sets them once for everyone. This is
-          what is in effect right now.
-        </p>
-        <p id="sites-summary" class="summary"></p>
         <p class="hint">
-          Keyboard shortcut: <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>T</kbd> toggles the drawer.
+          Keyboard shortcut: <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>T</kbd> opens the panel.
           Change it at <code>chrome://extensions/shortcuts</code>.
+        </p>
+      </section>
+
+      <section class="card">
+        <h2>Setting up the spreadsheet</h2>
+        <p class="copy">
+          Only needed once, by whoever maintains the tool list. The full walkthrough is in
+          <code>docs/SHEET-SETUP.md</code> in the repository.
+        </p>
+        <ol class="steps">
+          <li>Make a Google Sheet with tabs named <b>Tools</b>, <b>Superadmin</b> and <b>Settings</b>.</li>
+          <li>Open <b>Extensions → Apps Script</b> and paste in <code>apps-script/Code.gs</code>.</li>
+          <li>Run <b>setUpSheets</b> once to create the headers.</li>
+          <li>
+            <b>Deploy → New deployment → Web app</b>. Set <i>Execute as</i> to <b>Me</b> and
+            <i>Who has access</i> to <b>Anyone</b>.
+          </li>
+          <li>Copy the <code>/exec</code> link into the box above.</li>
+        </ol>
+        <p class="hint">
+          <b>Anyone</b> lets the drawer read the tool list without a Google login. It does not
+          make the spreadsheet public — the script is the only thing that can read it, and it
+          never returns the Superadmin tab.
         </p>
       </section>
     </div>

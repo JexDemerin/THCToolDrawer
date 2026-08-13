@@ -1,47 +1,51 @@
-// Shared keys and message names. Imported by the service worker, the drawer
-// page and the options page. The content script duplicates the few strings it
-// needs, because MV3 content scripts cannot import modules.
+// Shared keys and message names.
 
 export const STORAGE = {
-  CONFIG: 'config', // the tool catalog (synced from remote, editable by admins)
-  SYNC: 'sync', // where to pull the catalog from, and pull bookkeeping
-  PUBLISH: 'publish', // how an admin pushes the catalog back out (local only)
-  UI: 'ui', // per-user drawer preferences
-  META: 'meta' // last-sync results, pending-update notices
+  CATALOG: 'catalog', // the tool list, pulled from the sheet
+  SETTINGS: 'settings', // where to pull it from
+  META: 'meta' // sync bookkeeping
 };
 
 export const SESSION = {
-  ADMIN_UNTIL: 'adminUnlockedUntil'
+  ADMIN_UNTIL: 'adminUnlockedUntil',
+  ADMIN_PASSWORD: 'adminPassword' // held only for this browser session, to
+  // re-authorise saves without asking again
 };
 
 // How long a super-admin unlock lasts before it has to be re-entered.
 export const ADMIN_SESSION_MS = 30 * 60 * 1000;
 
 export const MSG = {
-  // content script <-> service worker
-  TOGGLE_DRAWER: 'TD_TOGGLE_DRAWER',
-  GET_MOUNT_STATE: 'TD_GET_MOUNT_STATE',
-  SET_UI: 'TD_SET_UI',
-
-  // drawer page -> service worker
   GET_STATE: 'TD_GET_STATE',
-  LAUNCH: 'TD_LAUNCH',
   SYNC_NOW: 'TD_SYNC_NOW',
-  SAVE_CONFIG: 'TD_SAVE_CONFIG',
-  PUBLISH_CONFIG: 'TD_PUBLISH_CONFIG',
-  DISCARD_LOCAL: 'TD_DISCARD_LOCAL',
+  LAUNCH: 'TD_LAUNCH',
+  ADMIN_VERIFY: 'TD_ADMIN_VERIFY',
+  ADMIN_LOCK: 'TD_ADMIN_LOCK',
+  ADMIN_SAVE: 'TD_ADMIN_SAVE',
   CHECK_INSTALLED: 'TD_CHECK_INSTALLED',
-  GET_SELECTION: 'TD_GET_SELECTION',
   OPEN_OPTIONS: 'TD_OPEN_OPTIONS',
-
-  // service worker -> drawer page
-  CONFIG_CHANGED: 'TD_CONFIG_CHANGED'
+  PING: 'TD_PING',
+  CATALOG_CHANGED: 'TD_CATALOG_CHANGED'
 };
 
 export const ALARM_SYNC = 'td-sync';
 
-export const ACTION_TYPES = {
-  OPEN_URL: 'openUrl',
-  EXTENSION_PAGE: 'extensionPage',
-  EXTENSION_MESSAGE: 'extensionMessage'
+export const TYPES = {
+  APP: 'app',
+  EXTENSION_MESSAGE: 'extensionMessage',
+  EXTENSION_PAGE: 'extensionPage'
 };
+
+// Icons bundled with the extension. The sheet's Icon column takes one of these
+// names, or an https:// image URL for anything else.
+export const BUILT_IN_ICONS = [
+  'drawer',
+  'scanner',
+  'verify',
+  'blaster',
+  'board',
+  'intake',
+  'report',
+  'link',
+  'app'
+];

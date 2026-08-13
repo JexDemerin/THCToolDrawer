@@ -1,8 +1,8 @@
-// Thin wrappers over chrome.storage.local with defaults applied on read.
+// Thin wrappers over chrome.storage with defaults applied on read.
 
-import { STORAGE } from './constants.js';
-import { DEFAULT_CONFIG, DEFAULT_SYNC, DEFAULT_PUBLISH, DEFAULT_UI } from './defaults.js';
-import { normalizeConfig, deepClone } from './config.js';
+import { STORAGE, SESSION, ADMIN_SESSION_MS } from './constants.js';
+import { DEFAULT_SETTINGS, DEFAULT_CATALOG, DEFAULT_META } from './defaults.js';
+import { normalizeCatalog, deepClone } from './catalog.js';
 
 async function read(key) {
   const bag = await chrome.storage.local.get(key);
@@ -14,64 +14,56 @@ async function write(key, value) {
   return value;
 }
 
-export async function getConfig() {
-  const stored = await read(STORAGE.CONFIG);
-  return normalizeConfig(stored || deepClone(DEFAULT_CONFIG));
+export async function getCatalog() {
+  return normalizeCatalog((await read(STORAGE.CATALOG)) || deepClone(DEFAULT_CATALOG));
 }
 
-export async function setConfig(config) {
-  return write(STORAGE.CONFIG, normalizeConfig(config));
+export async function setCatalog(catalog) {
+  return write(STORAGE.CATALOG, normalizeCatalog(catalog));
 }
 
-export async function getSync() {
-  return { ...DEFAULT_SYNC, ...(await read(STORAGE.SYNC)) };
+export async function getSettings() {
+  return { ...DEFAULT_SETTINGS, ...(await read(STORAGE.SETTINGS)) };
 }
 
-export async function setSync(patch) {
-  return write(STORAGE.SYNC, { ...(await getSync()), ...patch });
-}
-
-export async function getPublish() {
-  const stored = (await read(STORAGE.PUBLISH)) || {};
-  return {
-    ...DEFAULT_PUBLISH,
-    ...stored,
-    gist: { ...DEFAULT_PUBLISH.gist, ...(stored.gist || {}) },
-    http: { ...DEFAULT_PUBLISH.http, ...(stored.http || {}) }
-  };
-}
-
-export async function setPublish(patch) {
-  const current = await getPublish();
-  return write(STORAGE.PUBLISH, {
-    ...current,
-    ...patch,
-    gist: { ...current.gist, ...(patch.gist || {}) },
-    http: { ...current.http, ...(patch.http || {}) }
-  });
-}
-
-export async function getUi() {
-  return { ...DEFAULT_UI, ...(await read(STORAGE.UI)) };
-}
-
-export async function setUi(patch) {
-  return write(STORAGE.UI, { ...(await getUi()), ...patch });
+export async function setSettings(patch) {
+  return write(STORAGE.SETTINGS, { ...(await getSettings()), ...patch });
 }
 
 export async function getMeta() {
-  return {
-    lastSyncAt: null,
-    lastSyncError: null,
-    lastRemoteVersion: null,
-    // Set when an admin has unpublished local edits.
-    dirty: false,
-    // Set when a remote update arrived while local edits were pending.
-    pendingRemoteVersion: null,
-    ...(await read(STORAGE.META))
-  };
+  return { ...DEFAULT_META, ...(await read(STORAGE.META)) };
 }
 
 export async function setMeta(patch) {
   return write(STORAGE.META, { ...(await getMeta()), ...patch });
+}
+
+// ---------------------------------------------------------------------------
+// Super-admin session
+//
+// The password is held in session storage, which Chrome clears when the browser
+// closes and never writes to disk. It is kept only so an admin can save several
+// edits without re-typing it — the sheet is the thing that actually checks it.
+// ---------------------------------------------------------------------------
+
+export async function isAdminUnlocked() {
+  const bag = await chrome.storage.session.get(SESSION.ADMIN_UNTIL);
+  return (bag[SESSION.ADMIN_UNTIL] || 0) > Date.now();
+}
+
+export async function startAdminSession(password) {
+  await chrome.storage.session.set({
+    [SESSION.ADMIN_UNTIL]: Date.now() + ADMIN_SESSION_MS,
+    [SESSION.ADMIN_PASSWORD]: password
+  });
+}
+
+export async function getAdminPassword() {
+  if (!(await isAdminUnlocked())) return null;
+  const bag = await chrome.storage.session.get(SESSION.ADMIN_PASSWORD);
+  return bag[SESSION.ADMIN_PASSWORD] || null;
+}
+
+export async function endAdminSession() {
+  await chrome.storage.session.remove([SESSION.ADMIN_UNTIL, SESSION.ADMIN_PASSWORD]);
 }
