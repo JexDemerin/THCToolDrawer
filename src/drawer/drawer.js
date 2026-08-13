@@ -251,7 +251,13 @@ function renderTool(section, item, itemIndex, itemCount) {
 
   const name = document.createElement('div');
   name.className = 'tool-name';
-  name.append(document.createTextNode(item.name));
+
+  // The label is its own element so it can ellipsize instead of wrapping the
+  // row when a badge sits next to a long tool name.
+  const label = document.createElement('span');
+  label.className = 'tool-label';
+  label.textContent = item.name;
+  name.appendChild(label);
 
   const missing = isMissing(item);
   if (missing) {

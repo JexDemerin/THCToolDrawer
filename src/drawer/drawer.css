@@ -239,6 +239,14 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
+}
+
+/* Truncates so a badge beside a long name never wraps the row. */
+.tool-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .tool-desc {
@@ -251,6 +259,7 @@ body {
 
 .badge {
   flex: 0 0 auto;
+  white-space: nowrap;
   padding: 1px 6px;
   border-radius: 999px;
   font-size: 9.5px;
