@@ -1,0 +1,11 @@
+# Packaged builds
+*.zip
+*.crx
+*.pem
+
+# Never commit a real catalog — it carries the admin password hash and your
+# team's internal links. config.example.json is the one that belongs in git.
+thc-tool-drawer.json
+
+.DS_Store
+node_modules/

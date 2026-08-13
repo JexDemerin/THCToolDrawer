@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>THC Tool Drawer — Settings</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>THC Tool Drawer</h1>
+        <p class="sub">Settings for this browser. <span id="version-tag"></span></p>
+      </header>
+
+      <section class="card">
+        <h2>Catalog</h2>
+        <p class="copy">
+          Where this browser pulls the shared button list from. Everyone on the team points at the
+          same URL; when a super admin publishes, the buttons update on their own — no reinstall.
+        </p>
+
+        <label>
+          <span>Catalog URL</span>
+          <input id="config-url" type="url" placeholder="https://gist.githubusercontent.com/…/thc-tool-drawer.json" />
+        </label>
+
+        <div class="row">
+          <label class="narrow">
+            <span>Check every (minutes)</span>
+            <input id="poll-minutes" type="number" min="5" max="1440" />
+          </label>
+          <label class="check">
+            <input id="sync-on-open" type="checkbox" />
+            <span>Also check whenever the drawer is opened</span>
+          </label>
+        </div>
+
+        <div class="actions">
+          <button id="btn-save-sync" class="primary" type="button">Save</button>
+          <button id="btn-sync-now" type="button">Check now</button>
+        </div>
+        <p id="sync-status" class="status"></p>
+      </section>
+
+      <section class="card">
+        <h2>Publishing <span class="lock-tag" id="publish-lock">super admin</span></h2>
+        <p class="copy">
+          Only needed on the machine that maintains the catalog. Everyone else can leave this alone.
+        </p>
+
+        <div id="publish-gate">
+          <label>
+            <span>Super-admin password</span>
+            <input id="admin-password" type="password" autocomplete="current-password" />
+          </label>
+          <div class="actions">
+            <button id="btn-unlock" class="primary" type="button">Unlock</button>
+          </div>
+          <p id="unlock-status" class="status"></p>
+        </div>
+
+        <div id="publish-panel" hidden>
+          <label>
+            <span>Publish to</span>
+            <select id="publish-target">
+              <option value="manual">Download the file (I host it myself)</option>
+              <option value="gist">GitHub Gist</option>
+              <option value="http">My own endpoint</option>
+            </select>
+          </label>
+
+          <div data-target="gist">
+            <label>
+              <span>Gist ID</span>
+              <input id="gist-id" type="text" placeholder="e.g. 4f3a1c9b2d…" />
+            </label>
+            <label>
+              <span>File name inside the gist</span>
+              <input id="gist-filename" type="text" placeholder="thc-tool-drawer.json" />
+            </label>
+            <label>
+              <span>GitHub token (scope: gist)</span>
+              <input id="gist-token" type="password" placeholder="github_pat_…" />
+            </label>
+            <p class="hint">
+              The token stays in this browser's local storage and is never written into the
+              published catalog. Use a fine-grained token limited to gists.
+            </p>
+          </div>
+
+          <div data-target="http">
+            <label>
+              <span>Endpoint URL</span>
+              <input id="http-url" type="url" placeholder="https://intranet.example.org/tool-drawer.json" />
+            </label>
+            <div class="row">
+              <label class="narrow">
+                <span>Method</span>
+                <select id="http-method">
+                  <option>PUT</option>
+                  <option>POST</option>
+                </select>
+              </label>
+              <label>
+                <span>Header name</span>
+                <input id="http-header-name" type="text" placeholder="Authorization" />
+              </label>
+              <label>
+                <span>Header value</span>
+                <input id="http-header-value" type="password" placeholder="Bearer …" />
+              </label>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button id="btn-save-publish" class="primary" type="button">Save</button>
+            <button id="btn-publish-now" type="button">Publish catalog now</button>
+          </div>
+          <p id="publish-status" class="status"></p>
+
+          <hr />
+
+          <h3>Catalog file</h3>
+          <div class="actions">
+            <button id="btn-export" type="button">Export</button>
+            <button id="btn-import" type="button">Import…</button>
+            <input id="import-file" type="file" accept="application/json,.json" hidden />
+          </div>
+          <p id="io-status" class="status"></p>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Where the drawer appears</h2>
+        <p class="copy">
+          Site rules travel with the catalog, so a super admin sets them once for everyone. This is
+          what is in effect right now.
+        </p>
+        <p id="sites-summary" class="summary"></p>
+        <p class="hint">
+          Keyboard shortcut: <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>T</kbd> toggles the drawer.
+          Change it at <code>chrome://extensions/shortcuts</code>.
+        </p>
+      </section>
+    </div>
+
+    <script type="module" src="options.js"></script>
+  </body>
+</html>

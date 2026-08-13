@@ -1,0 +1,101 @@
+{
+  "schema": 1,
+  "version": 4,
+  "updatedAt": "2026-08-13T15:00:00.000Z",
+  "updatedBy": "jexter@togetherhomecare.org",
+  "branding": {
+    "title": "THC Tool Drawer",
+    "subtitle": "Together Homecare",
+    "accent": "#0d7c74"
+  },
+  "settings": {
+    "side": "right",
+    "handleLabel": "Tools",
+    "sites": {
+      "mode": "all",
+      "patterns": []
+    }
+  },
+  "admin": {
+    "passwordHash": "REPLACE-ME-BY-SETTING-A-PASSWORD-IN-THE-DRAWER",
+    "salt": "REPLACE-ME",
+    "iterations": 250000
+  },
+  "sections": [
+    {
+      "id": "sec-extensions",
+      "name": "Extensions",
+      "items": [
+        {
+          "id": "item-wellsky-scanner",
+          "name": "WellSky Scanner",
+          "description": "Scan and pull data from WellSky.",
+          "icon": "🔎",
+          "kind": "extension",
+          "enabled": true,
+          "action": {
+            "type": "extensionPage",
+            "extensionId": "abcdefghijklmnopabcdefghijklmnop",
+            "path": "popup.html",
+            "target": "popup",
+            "popup": { "width": 460, "height": 720 }
+          },
+          "install": {
+            "webStoreUrl": "https://chromewebstore.google.com/detail/abcdefghijklmnopabcdefghijklmnop"
+          }
+        },
+        {
+          "id": "item-text-blaster",
+          "name": "Text Blaster",
+          "description": "Send templated texts to caregivers.",
+          "icon": "💬",
+          "kind": "extension",
+          "enabled": true,
+          "action": {
+            "type": "extensionMessage",
+            "extensionId": "ponmlkjihgfedcbaponmlkjihgfedcba",
+            "message": "{\"type\":\"OPEN_BLASTER\"}"
+          },
+          "install": {
+            "webStoreUrl": "https://chromewebstore.google.com/detail/ponmlkjihgfedcbaponmlkjihgfedcba"
+          }
+        }
+      ]
+    },
+    {
+      "id": "sec-apps",
+      "name": "Web Apps",
+      "items": [
+        {
+          "id": "item-scheduler",
+          "name": "Scheduling Board",
+          "description": "Our in-house scheduling app.",
+          "icon": "🗓️",
+          "kind": "app",
+          "enabled": true,
+          "action": {
+            "type": "openUrl",
+            "url": "https://script.google.com/a/macros/togetherhomecare.org/s/EXAMPLE/exec",
+            "target": "tab"
+          },
+          "install": { "webStoreUrl": "" }
+        },
+        {
+          "id": "item-intake",
+          "name": "Client Intake",
+          "description": "Opens with the current page carried over.",
+          "icon": "📝",
+          "kind": "app",
+          "enabled": true,
+          "action": {
+            "type": "openUrl",
+            "url": "https://intake.togetherhomecare.org/new?from={{url}}&name={{selection}}",
+            "target": "popup",
+            "popup": { "width": 520, "height": 760 }
+          },
+          "install": { "webStoreUrl": "" }
+        }
+      ]
+    }
+  ]
+}

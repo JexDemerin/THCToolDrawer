@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>THC Tool Drawer</title>
+    <link rel="stylesheet" href="drawer.css" />
+  </head>
+  <body>
+    <header class="head">
+      <div class="head-titles">
+        <h1 id="brand-title">THC Tool Drawer</h1>
+        <p id="brand-subtitle">Together Homecare</p>
+      </div>
+      <div class="head-actions">
+        <button id="btn-sync" class="icon-btn" type="button" title="Check for updates">⟳</button>
+        <button id="btn-pin" class="icon-btn" type="button" title="Keep the drawer open on every page">📌</button>
+        <button id="btn-close" class="icon-btn" type="button" title="Close">✕</button>
+      </div>
+    </header>
+
+    <div class="search-row">
+      <input id="search" type="search" placeholder="Search tools…" autocomplete="off" />
+    </div>
+
+    <div id="notice" class="notice" hidden></div>
+
+    <main id="tools" class="tools"></main>
+
+    <footer class="foot">
+      <button id="btn-admin" class="admin-btn" type="button">
+        <span class="admin-icon">🔐</span>
+        <span id="admin-label">Super admin</span>
+      </button>
+      <span id="version-tag" class="version-tag"></span>
+    </footer>
+
+    <!-- Password gate -->
+    <div id="unlock-modal" class="modal" hidden>
+      <div class="modal-card">
+        <h2 id="unlock-title">Super admin</h2>
+        <p id="unlock-copy" class="modal-copy">Enter the super-admin password to edit the drawer.</p>
+        <form id="unlock-form">
+          <input id="unlock-password" type="password" placeholder="Password" autocomplete="current-password" required />
+          <input id="unlock-confirm" type="password" placeholder="Confirm password" autocomplete="new-password" hidden />
+          <p id="unlock-error" class="modal-error" hidden></p>
+          <div class="modal-actions">
+            <button type="button" class="ghost" data-close-modal="unlock-modal">Cancel</button>
+            <button type="submit" class="primary" id="unlock-submit">Unlock</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Item editor -->
+    <div id="item-modal" class="modal" hidden>
+      <div class="modal-card wide">
+        <h2 id="item-modal-title">Add a tool</h2>
+        <form id="item-form">
+          <label>
+            <span>Button name</span>
+            <input id="f-name" type="text" required maxlength="60" />
+          </label>
+
+          <label>
+            <span>Short description</span>
+            <input id="f-description" type="text" maxlength="120" />
+          </label>
+
+          <div class="field-row">
+            <label class="narrow">
+              <span>Icon</span>
+              <input id="f-icon" type="text" maxlength="4" placeholder="🌐" />
+            </label>
+            <label>
+              <span>Type</span>
+              <select id="f-kind">
+                <option value="app">Web app</option>
+                <option value="extension">Extension</option>
+              </select>
+            </label>
+          </div>
+
+          <label>
+            <span>What the button does</span>
+            <select id="f-action-type">
+              <option value="openUrl">Open a link (web app)</option>
+              <option value="extensionPage">Open an extension's page</option>
+              <option value="extensionMessage">Send a message to an extension</option>
+            </select>
+          </label>
+
+          <div data-when="openUrl">
+            <label>
+              <span>Link</span>
+              <input id="f-url" type="text" placeholder="https://app.example.com/exec" />
+            </label>
+            <p class="hint">
+              Optional placeholders: <code>{{url}}</code>, <code>{{title}}</code>,
+              <code>{{selection}}</code>, <code>{{date}}</code> — filled in from the page the
+              teammate is on.
+            </p>
+          </div>
+
+          <div data-when="extensionPage extensionMessage">
+            <label>
+              <span>Extension ID</span>
+              <input id="f-extension-id" type="text" placeholder="32-character ID from chrome://extensions" />
+            </label>
+          </div>
+
+          <div data-when="extensionPage">
+            <label>
+              <span>Page inside that extension</span>
+              <input id="f-path" type="text" placeholder="popup.html" />
+            </label>
+            <p class="hint">
+              The target extension must list this file in its
+              <code>web_accessible_resources</code>, otherwise Chrome refuses to open it.
+            </p>
+          </div>
+
+          <div data-when="extensionMessage">
+            <label>
+              <span>Message (JSON)</span>
+              <textarea id="f-message" rows="3" placeholder='{"type":"OPEN"}'></textarea>
+            </label>
+            <p class="hint">
+              The target extension must list this extension's ID under
+              <code>externally_connectable</code>.
+            </p>
+          </div>
+
+          <div class="field-row" data-when="openUrl extensionPage">
+            <label>
+              <span>Open in</span>
+              <select id="f-target">
+                <option value="tab">New tab</option>
+                <option value="popup">Popup window</option>
+                <option value="current">Current tab</option>
+              </select>
+            </label>
+            <label class="narrow" data-when-target="popup">
+              <span>Width</span>
+              <input id="f-popup-width" type="number" min="200" max="2000" value="460" />
+            </label>
+            <label class="narrow" data-when-target="popup">
+              <span>Height</span>
+              <input id="f-popup-height" type="number" min="200" max="2000" value="720" />
+            </label>
+          </div>
+
+          <label data-when="extensionPage extensionMessage">
+            <span>Install link (shown when it is missing)</span>
+            <input id="f-webstore" type="text" placeholder="https://chromewebstore.google.com/detail/…" />
+          </label>
+
+          <label>
+            <span>Section</span>
+            <select id="f-section"></select>
+          </label>
+
+          <label class="check">
+            <input id="f-enabled" type="checkbox" checked />
+            <span>Show this button to the team</span>
+          </label>
+
+          <p id="item-error" class="modal-error" hidden></p>
+
+          <div class="modal-actions">
+            <button type="button" class="danger" id="btn-delete-item" hidden>Delete</button>
+            <span class="spacer"></span>
+            <button type="button" class="ghost" data-close-modal="item-modal">Cancel</button>
+            <button type="submit" class="primary">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Section editor -->
+    <div id="section-modal" class="modal" hidden>
+      <div class="modal-card">
+        <h2 id="section-modal-title">Add a section</h2>
+        <form id="section-form">
+          <label>
+            <span>Section name</span>
+            <input id="f-section-name" type="text" required maxlength="40" />
+          </label>
+          <p id="section-error" class="modal-error" hidden></p>
+          <div class="modal-actions">
+            <button type="button" class="danger" id="btn-delete-section" hidden>Delete</button>
+            <span class="spacer"></span>
+            <button type="button" class="ghost" data-close-modal="section-modal">Cancel</button>
+            <button type="submit" class="primary">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="toast" class="toast" hidden></div>
+
+    <script type="module" src="drawer.js"></script>
+  </body>
+</html>
