@@ -160,7 +160,7 @@ either direction. So a button pointing at Shift Scanner cannot bring up Shift
 Scanner's panel on its own — the target extension has to agree to be opened.
 
 Since your extensions are your own, that's a few lines in each. In the target
-extension's `manifest.json`:
+extension's `manifest.json`, inside the outermost `{ }` alongside `"name"`:
 
 ```json
 "externally_connectable": { "ids": ["<the Tool Drawer's extension ID>"] }

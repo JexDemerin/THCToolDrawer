@@ -94,14 +94,31 @@ Write all three down:
 
 ## Step 4 — Teach Scanner and Blaster to accept the drawer
 
-In **each** of Scanner's and Blaster's `manifest.json`, add this at the top
-level, using the **Tool Drawer's** ID:
+In **each** of Scanner's and Blaster's `manifest.json`, add an
+`externally_connectable` entry using the **Tool Drawer's** ID.
+
+It goes **inside the outermost `{ }`**, as a sibling of `"name"` and
+`"version"` — not above the opening brace. A manifest must start with `{` and
+end with `}`; anything before that first brace gives you
+*"a object must begin with '{'"* on upload.
 
 ```json
-"externally_connectable": {
-  "ids": ["PASTE_THE_TOOL_DRAWER_ID_HERE"]
+{
+  "manifest_version": 3,
+  "name": "Text Blaster",
+  "version": "1.0.1",
+  "externally_connectable": {
+    "ids": ["PASTE_THE_TOOL_DRAWER_ID_HERE"]
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
 }
 ```
+
+Every entry ends with a comma except the last one. Paste the finished file into
+**jsonlint.com** before re-zipping — it points at the exact line if anything is
+wrong, which is quicker than another upload attempt.
 
 And in each one's background script (service worker), add a listener:
 
@@ -196,6 +213,13 @@ its root. Re-zip the contents, not the folder.
 
 **"Version number is not greater than the previous."** Bump `version` in
 `manifest.json` before re-zipping.
+
+**"a object must begin with '{'".** Either something was pasted above the
+manifest's opening brace, or the editor saved a hidden byte-order mark at the
+start of the file. For the second, re-save from Notepad with **File → Save As →
+Encoding: UTF-8** (not "UTF-8 with BOM"). Editing these files in VS Code or
+Notepad++ avoids it; Word and Google Docs will also silently replace `"` with
+curly quotes and break the file.
 
 **A button says the extension didn't answer.** Either that extension is missing
 `externally_connectable` with the drawer's ID, or the ID in the sheet is wrong.
