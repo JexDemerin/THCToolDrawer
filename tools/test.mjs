@@ -13,8 +13,9 @@ import {
   usesTemplate,
   findItem,
   isValidExtensionId,
-  isExtensionType,
-  countItems
+  groupItems,
+  sectionNameFor,
+  moveWithinSection
 } from '../src/lib/catalog.js';
 import { looksLikeEndpoint } from '../src/lib/api.js';
 import { TYPES } from '../src/lib/constants.js';
@@ -34,36 +35,32 @@ async function test(name, fn) {
 const SHEET_LIKE = {
   version: 7,
   branding: { title: 'Tool Drawer', subtitle: 'Together Homecare' },
-  sections: [
+  items: [
     {
-      name: 'Extensions',
-      items: [
-        {
-          id: 'row-2',
-          name: 'WellSky Shift Scanner',
-          description: 'Scan and pull data from WellSky.',
-          type: 'extensionMessage',
-          target: 'abcdefghijklmnopabcdefghijklmnop',
-          openIn: 'tab',
-          icon: 'scanner',
-          installLink: '',
-          enabled: true
-        }
-      ]
+      id: 'row-2',
+      name: 'WellSky Shift Scanner',
+      description: 'Scan and pull data from WellSky.',
+      type: 'extension',
+      target: 'abcdefghijklmnopabcdefghijklmnop',
+      icon: 'scanner',
+      enabled: true
     },
     {
-      name: 'Web Apps',
-      items: [
-        {
-          id: 'row-3',
-          name: 'Client Intake',
-          type: 'app',
-          target: 'https://intake.togetherhomecare.org/new?from={{url}}',
-          openIn: 'popup',
-          icon: 'intake',
-          enabled: true
-        }
-      ]
+      id: 'row-3',
+      name: 'Client Intake',
+      type: 'app',
+      target: 'https://intake.togetherhomecare.org/new?from={{url}}',
+      openIn: 'popup',
+      icon: 'intake',
+      enabled: true
+    },
+    {
+      id: 'row-4',
+      name: 'Shift Verification',
+      type: 'extension',
+      target: 'bcdefghijklmnopabcdefghijklmnopa',
+      icon: 'verify',
+      enabled: true
     }
   ]
 };
@@ -73,29 +70,26 @@ const SHEET_LIKE = {
 await test('a sheet-shaped catalog survives a round trip', () => {
   const catalog = normalizeCatalog(SHEET_LIKE);
   assert.equal(catalog.version, 7);
-  assert.equal(catalog.sections.length, 2);
-  assert.equal(catalog.sections[0].items[0].name, 'WellSky Shift Scanner');
-  assert.equal(countItems(catalog), 2);
+  assert.equal(catalog.items.length, 3);
+  assert.equal(catalog.items[0].name, 'WellSky Shift Scanner');
 });
 
 await test('garbage in does not throw', () => {
   for (const input of [null, undefined, 42, 'nope', [], { sections: 'no' }]) {
     const catalog = normalizeCatalog(input);
-    assert.ok(Array.isArray(catalog.sections));
+    assert.ok(Array.isArray(catalog.items));
     assert.equal(catalog.version, 0);
   }
 });
 
 await test('an unknown type falls back to a plain link', () => {
-  const catalog = normalizeCatalog({
-    sections: [{ name: 'S', items: [{ name: 'X', type: 'rm -rf' }] }]
-  });
-  assert.equal(catalog.sections[0].items[0].type, TYPES.APP);
+  const catalog = normalizeCatalog({ items: [{ name: 'X', type: 'rm -rf' }] });
+  assert.equal(catalog.items[0].type, TYPES.APP);
 });
 
 await test('a blank row still yields a usable item', () => {
-  const catalog = normalizeCatalog({ sections: [{ name: 'S', items: [{}] }] });
-  const item = catalog.sections[0].items[0];
+  const catalog = normalizeCatalog({ items: [{}] });
+  const item = catalog.items[0];
   assert.equal(item.name, 'Untitled');
   assert.equal(item.enabled, true);
   assert.match(item.id, /^item-/);
@@ -103,33 +97,27 @@ await test('a blank row still yields a usable item', () => {
 
 await test('enabled is only false when the sheet says so', () => {
   const make = (enabled) =>
-    normalizeCatalog({ sections: [{ name: 'S', items: [{ name: 'X', enabled }] }] })
-      .sections[0].items[0].enabled;
+    normalizeCatalog({ items: [{ name: 'X', enabled }] }).items[0].enabled;
   assert.equal(make(false), false);
   assert.equal(make(true), true);
   assert.equal(make(undefined), true); // a blank cell means visible
 });
 
 await test('an unknown "open in" falls back to a new tab', () => {
-  const catalog = normalizeCatalog({
-    sections: [{ name: 'S', items: [{ name: 'X', openIn: 'sideways' }] }]
-  });
-  assert.equal(catalog.sections[0].items[0].openIn, 'tab');
+  const catalog = normalizeCatalog({ items: [{ name: 'X', openIn: 'sideways' }] });
+  assert.equal(catalog.items[0].openIn, 'tab');
 });
 
 // --- icons -----------------------------------------------------------------
 
 await test('a built-in icon name is kept', () => {
-  const catalog = normalizeCatalog({
-    sections: [{ name: 'S', items: [{ name: 'X', icon: 'verify' }] }]
-  });
-  assert.equal(catalog.sections[0].items[0].icon, 'verify');
+  const catalog = normalizeCatalog({ items: [{ name: 'X', icon: 'verify' }] });
+  assert.equal(catalog.items[0].icon, 'verify');
 });
 
 await test('an https image URL is kept, other schemes are not', () => {
   const iconOf = (icon) =>
-    normalizeCatalog({ sections: [{ name: 'S', items: [{ name: 'X', icon }] }] })
-      .sections[0].items[0].icon;
+    normalizeCatalog({ items: [{ name: 'X', icon }] }).items[0].icon;
 
   assert.equal(iconOf('https://cdn.example.org/a.png'), 'https://cdn.example.org/a.png');
   assert.equal(iconOf('data:image/svg+xml;base64,AAA'), 'data:image/svg+xml;base64,AAA');
@@ -183,18 +171,54 @@ await test('extension IDs are 32 letters a-p', () => {
   assert.equal(isValidExtensionId(''), false);
 });
 
-await test('extension types are told apart from apps', () => {
-  assert.equal(isExtensionType(TYPES.EXTENSION_MESSAGE), true);
-  assert.equal(isExtensionType(TYPES.EXTENSION_PAGE), true);
-  assert.equal(isExtensionType(TYPES.APP), false);
-});
-
 // --- lookups and endpoints -------------------------------------------------
 
-await test('findItem reaches across sections', () => {
+await test('findItem locates by id', () => {
   const catalog = normalizeCatalog(SHEET_LIKE);
   assert.equal(findItem(catalog, 'row-3').name, 'Client Intake');
   assert.equal(findItem(catalog, 'missing'), null);
+});
+
+// --- the two fixed sections ------------------------------------------------
+
+await test('tools land in the section their type dictates', () => {
+  const sections = groupItems(normalizeCatalog(SHEET_LIKE));
+  assert.equal(sections.length, 2);
+  assert.deepEqual(sections.map((s) => s.name), ['Extensions', 'Web Apps']);
+  assert.deepEqual(sections[0].items.map((i) => i.name), [
+    'WellSky Shift Scanner',
+    'Shift Verification'
+  ]);
+  assert.deepEqual(sections[1].items.map((i) => i.name), ['Client Intake']);
+});
+
+await test('both sections exist even when one is empty', () => {
+  const sections = groupItems(normalizeCatalog({ items: [{ name: 'X', type: 'app' }] }));
+  assert.equal(sections.length, 2);
+  assert.equal(sections[0].items.length, 0);
+  assert.equal(sections[1].items.length, 1);
+});
+
+await test('section names follow the type', () => {
+  assert.equal(sectionNameFor(TYPES.EXTENSION), 'Extensions');
+  assert.equal(sectionNameFor(TYPES.APP), 'Web Apps');
+});
+
+await test('reordering moves within a section, not across the flat list', () => {
+  const catalog = normalizeCatalog(SHEET_LIKE);
+  // Shift Verification is second among extensions but third in the flat list.
+  const items = moveWithinSection(catalog, 'row-4', -1);
+  const names = groupItems({ ...catalog, items }).map((s) => s.items.map((i) => i.name));
+  assert.deepEqual(names[0], ['Shift Verification', 'WellSky Shift Scanner']);
+  // The web app is untouched.
+  assert.deepEqual(names[1], ['Client Intake']);
+});
+
+await test('reordering past either end is refused', () => {
+  const catalog = normalizeCatalog(SHEET_LIKE);
+  assert.equal(moveWithinSection(catalog, 'row-2', -1), null); // already first
+  assert.equal(moveWithinSection(catalog, 'row-4', 1), null); // already last
+  assert.equal(moveWithinSection(catalog, 'nope', 1), null);
 });
 
 await test('only a deployed Apps Script /exec link is accepted', () => {

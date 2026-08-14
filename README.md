@@ -91,6 +91,10 @@ teammate is on.
 **An extension** needs its 32-letter ID from `chrome://extensions` with
 developer mode on. Extensions have no link — the ID is how Chrome names them.
 
+The drawer has exactly two sections, **Extensions** and **Web Apps**. A tool
+lands in one or the other based on what it is, so there is no section to choose
+and none to mistype.
+
 **Extensions must opt in to being launched.** Chrome gives no way for one
 extension to open another, so each target needs `externally_connectable` in its
 manifest naming this extension, plus a listener. Both are a few lines and both
@@ -112,6 +116,7 @@ icons/logo-mark.svg        the company mark used in the panel header
 tools/render-icons.mjs     renders icon.svg to the PNG sizes Chrome needs
 tools/test.mjs             tests for the logic modules
 docs/SHEET-SETUP.md        spreadsheet and script setup
+docs/PUBLISHING.md         publishing all three extensions, in order
 docs/DEPLOY.md             getting it onto the team's machines
 ```
 

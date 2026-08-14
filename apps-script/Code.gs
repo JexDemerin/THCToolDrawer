@@ -25,7 +25,6 @@ const SHEET_SETTINGS = 'Settings';
 // Column order of the Tools tab. Changing the order here changes what the
 // script expects; the header row in the sheet is for humans, not for parsing.
 const TOOL_COLUMNS = [
-  'Section',
   'Name',
   'Description',
   'Type',
@@ -87,20 +86,11 @@ function json(payload) {
 function buildCatalog() {
   const book = SpreadsheetApp.getActiveSpreadsheet();
   const settings = readSettings(book);
-  const rows = readToolRows(book);
 
-  // Sections are created in the order they first appear in the sheet, so an
-  // admin reorders groups by moving rows rather than editing a second tab.
-  const order = [];
-  const grouped = {};
-
-  rows.forEach(function (row, index) {
-    const section = row['Section'] || 'Tools';
-    if (!grouped[section]) {
-      grouped[section] = [];
-      order.push(section);
-    }
-    grouped[section].push({
+  // A flat list. The drawer puts extensions and web apps into their own
+  // sections based on Type, so there is no Section column to get wrong.
+  const items = readToolRows(book).map(function (row, index) {
+    return {
       id: 'row-' + (index + 2), // sheet row number, so edits map back
       name: row['Name'],
       description: row['Description'],
@@ -110,7 +100,7 @@ function buildCatalog() {
       openIn: normalizeOpenIn(row['Open In']),
       installLink: row['Install Link'],
       enabled: isTrue(row['Enabled'])
-    });
+    };
   });
 
   return {
@@ -121,9 +111,7 @@ function buildCatalog() {
       title: settings.title || 'Tool Drawer',
       subtitle: settings.subtitle || 'Together Homecare'
     },
-    sections: order.map(function (name) {
-      return { name: name, items: grouped[name] };
-    })
+    items: items
   };
 }
 
@@ -170,8 +158,8 @@ function readSettings(book) {
 
 function normalizeType(value) {
   const type = String(value || '').trim().toLowerCase();
-  if (type === 'extension' || type === 'extension-message') return 'extensionMessage';
-  if (type === 'extension-page') return 'extensionPage';
+  // Older sheets may still say extension-message; treat it the same.
+  if (type === 'extension' || type === 'extension-message') return 'extension';
   return 'app';
 }
 
@@ -246,7 +234,7 @@ function constantTimeEquals(a, b) {
  */
 function saveCatalog(body) {
   if (!checkPassword(body.password)) return { ok: false, error: 'Wrong password.' };
-  if (!body.catalog || !Array.isArray(body.catalog.sections)) {
+  if (!body.catalog || !Array.isArray(body.catalog.items)) {
     return { ok: false, error: 'No catalog in the request.' };
   }
 
@@ -260,21 +248,18 @@ function saveCatalog(body) {
   if (!lock.tryLock(20000)) return { ok: false, error: 'Someone else is saving. Try again.' };
 
   try {
-    const rows = [];
-    body.catalog.sections.forEach(function (section) {
-      (section.items || []).forEach(function (item) {
-        rows.push([
-          section.name || 'Tools',
-          item.name || '',
-          item.description || '',
-          typeToSheet(item.type),
-          item.target || '',
-          item.openIn || 'tab',
-          item.icon || '',
-          item.installLink || '',
-          item.enabled === false ? 'FALSE' : 'TRUE'
-        ]);
-      });
+    const items = Array.isArray(body.catalog.items) ? body.catalog.items : [];
+    const rows = items.map(function (item) {
+      return [
+        item.name || '',
+        item.description || '',
+        item.type === 'extension' ? 'extension' : 'app',
+        item.target || '',
+        item.openIn || 'tab',
+        item.icon || '',
+        item.installLink || '',
+        item.enabled === false ? 'FALSE' : 'TRUE'
+      ];
     });
 
     sheet.clear();
@@ -289,12 +274,6 @@ function saveCatalog(body) {
   } finally {
     lock.releaseLock();
   }
-}
-
-function typeToSheet(type) {
-  if (type === 'extensionMessage') return 'extension-message';
-  if (type === 'extensionPage') return 'extension-page';
-  return 'app';
 }
 
 function bumpVersion(book) {
@@ -359,8 +338,8 @@ function setUpSheets() {
     sheet.getRange(1, 1, 1, TOOL_COLUMNS.length).setValues([TOOL_COLUMNS]).setFontWeight('bold');
     sheet.setFrozenRows(1);
     sheet.getRange(2, 1, 1, TOOL_COLUMNS.length).setValues([
-      ['Extensions', 'WellSky Shift Scanner', 'Scan and pull data from WellSky.',
-       'extension-message', 'paste-the-32-letter-id-here', 'tab', 'scanner', '', 'TRUE']
+      ['WellSky Shift Scanner', 'Scan and pull data from WellSky.', 'extension',
+       'paste-the-32-letter-id-here', 'tab', 'scanner', '', 'TRUE']
     ]);
   }
 

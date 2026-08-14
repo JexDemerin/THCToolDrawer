@@ -1,7 +1,8 @@
 // The side panel: renders the catalog, launches tools, and hosts super-admin
 // mode. Runs as an extension page, so chrome.* is available directly.
 
-import { MSG, BUILT_IN_ICONS } from '../lib/constants.js';
+import { MSG, TYPES, BUILT_IN_ICONS } from '../lib/constants.js';
+import { groupItems } from '../lib/catalog.js';
 import { openEditor, renderAdminBar, moveItem } from './admin.js';
 
 const $ = (selector) => document.querySelector(selector);
@@ -75,9 +76,9 @@ async function save(catalog) {
 
 async function checkInstalled() {
   const ids = [];
-  for (const section of state.catalog.sections) {
-    for (const item of section.items) {
-      if (item.type !== 'app' && item.target && !ids.includes(item.target)) ids.push(item.target);
+  for (const item of state.catalog.items) {
+    if (item.type === TYPES.EXTENSION && item.target && !ids.includes(item.target)) {
+      ids.push(item.target);
     }
   }
   if (!ids.length) return;
@@ -132,7 +133,10 @@ function renderTools() {
   const query = state.query.trim().toLowerCase();
   let shown = 0;
 
-  state.catalog.sections.forEach((section) => {
+  // Always the same two sections, in the same order. A section with nothing in
+  // it is hidden from the team but stays visible in admin mode, so there is
+  // somewhere to add the first tool.
+  groupItems(state.catalog).forEach((section) => {
     const items = section.items.filter((item) => {
       if (!state.admin && !item.enabled) return false;
       if (!query) return true;
@@ -157,7 +161,7 @@ function renderTools() {
     head.append(label, rule);
     if (state.admin) {
       head.appendChild(
-        mini('＋', 'Add a tool to this section', () => openEditor(ctx, { section: section.name }))
+        mini('＋', `Add to ${section.name}`, () => openEditor(ctx, { type: section.key }))
       );
     }
     wrapper.appendChild(head);
@@ -167,10 +171,17 @@ function renderTools() {
       shown += 1;
     });
 
+    if (!items.length) {
+      const none = document.createElement('p');
+      none.className = 'section-empty';
+      none.textContent = query ? 'Nothing matches here.' : 'Nothing here yet.';
+      wrapper.appendChild(none);
+    }
+
     root.appendChild(wrapper);
   });
 
-  if (!shown) root.appendChild(renderEmpty(Boolean(query)));
+  if (!shown && !state.admin) root.appendChild(renderEmpty(Boolean(query)));
 }
 
 function renderEmpty(searching) {
@@ -271,7 +282,7 @@ function renderIcon(item) {
     const fallback = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     fallback.setAttribute('class', 'tool-icon');
     const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
-    use.setAttribute('href', item.type === 'app' ? '#i-app' : '#i-link');
+    use.setAttribute('href', item.type === TYPES.APP ? '#i-app' : '#i-link');
     fallback.appendChild(use);
     img.replaceWith(fallback);
   });
@@ -299,7 +310,7 @@ function mini(label, title, handler) {
 }
 
 function isMissing(item) {
-  if (item.type === 'app' || !item.target || !state.hasManagement) return false;
+  if (item.type !== TYPES.EXTENSION || !item.target || !state.hasManagement) return false;
   return state.installed[item.target] === false;
 }
 

@@ -210,18 +210,12 @@ async function launch(itemId, tabId) {
   if (!item) return { ok: false, error: 'That button is no longer in the list.' };
   if (!item.enabled) return { ok: false, error: `${item.name} is turned off.` };
 
-  if (item.type === TYPES.EXTENSION_MESSAGE) return messageExtension(item);
+  if (item.type === TYPES.EXTENSION) return messageExtension(item);
 
-  let url;
-  if (item.type === TYPES.EXTENSION_PAGE) {
-    if (!item.target) return { ok: false, error: `${item.name} has no extension ID yet.` };
-    url = `chrome-extension://${item.target}/index.html`;
-  } else {
-    if (!item.target) return { ok: false, error: `${item.name} has no link yet.` };
-    url = usesTemplate(item.target)
-      ? renderTemplate(item.target, await buildContext(tabId))
-      : item.target;
-  }
+  if (!item.target) return { ok: false, error: `${item.name} has no link yet.` };
+  const url = usesTemplate(item.target)
+    ? renderTemplate(item.target, await buildContext(tabId))
+    : item.target;
 
   try {
     await openUrl(url, item, tabId);

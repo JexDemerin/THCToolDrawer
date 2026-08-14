@@ -56,10 +56,14 @@ You should now have three tabs:
 
 **Tools** — one row per button
 
-| Section | Name | Description | Type | Target | Open In | Icon | Install Link | Enabled |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Extensions | WellSky Shift Scanner | Scan and pull data from WellSky. | extension-message | *32-letter ID* | tab | scanner | | TRUE |
-| Web Apps | Scheduling Board | Our in-house scheduling app. | app | https://…/exec | tab | board | | TRUE |
+| Name | Description | Type | Target | Open In | Icon | Install Link | Enabled |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| WellSky Shift Scanner | Scan and pull data from WellSky. | extension | *32-letter ID* | | scanner | *store link* | TRUE |
+| Scheduling Board | Our in-house scheduling app. | app | https://…/exec | tab | board | | TRUE |
+
+There is no Section column. The drawer has exactly two sections — **Extensions**
+and **Web Apps** — and a tool goes into one or the other based on its **Type**.
+Nothing to keep in sync, nothing to mistype.
 
 **Superadmin** — who can edit
 
@@ -105,21 +109,18 @@ found and how many tools are in the sheet.
 
 ## Filling in the Tools tab
 
-**Section** — any name. Rows sharing a section are grouped under it, in the
-order they appear. Move a row to move a button.
+Row order sets button order within a section. Move a row to move a button.
 
-**Type** — one of:
+**Type** — one of exactly two:
 
-| Value | What the button does | What goes in Target |
+| Value | Lands in | What goes in Target |
 | --- | --- | --- |
-| `app` | Opens a link | The URL |
-| `extension-message` | Tells another extension to open | Its 32-letter ID |
-| `extension-page` | Opens a page inside another extension | Its 32-letter ID |
+| `app` | Web Apps | The link |
+| `extension` | Extensions | Its 32-letter ID |
 
-**Target** — a link for `app`; for the others, the extension's ID from
-`chrome://extensions` with **Developer mode** switched on.
+**Target** — a link for `app`, an extension ID for `extension`.
 
-**Open In** — `tab`, `popup`, or `current`.
+**Open In** — `tab`, `popup`, or `current`. Web apps only; extensions ignore it.
 
 **Icon** — one of the bundled names: `drawer`, `scanner`, `verify`, `blaster`,
 `board`, `intake`, `report`, `link`, `app`. Or an `https://` link to an image of
@@ -185,6 +186,9 @@ rather than failing silently.
 > cannot open its own side panel on request. The practical answer is for the
 > target to open its interface in a **popup window** when the drawer asks. Same
 > interface, different frame, and it works.
+
+Publishing order matters here — see [PUBLISHING.md](PUBLISHING.md), which walks
+through getting the IDs before anything goes live.
 
 ---
 

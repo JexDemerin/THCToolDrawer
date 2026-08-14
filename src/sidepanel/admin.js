@@ -5,7 +5,7 @@
 // modified copy, and hands it back to ctx.save(), which writes it to the sheet.
 
 import { MSG, TYPES } from '../lib/constants.js';
-import { newId, isValidExtensionId } from '../lib/catalog.js';
+import { newId, isValidExtensionId, findItem, moveWithinSection, sectionNameFor } from '../lib/catalog.js';
 
 const $ = (selector) => document.querySelector(selector);
 
@@ -23,9 +23,7 @@ export function renderAdminBar(ctx) {
     button('＋ Add app', 'primary', () => openEditor(ctx, { type: TYPES.APP }))
   );
   bar.appendChild(
-    button('＋ Add extension', 'primary', () =>
-      openEditor(ctx, { type: TYPES.EXTENSION_MESSAGE })
-    )
+    button('＋ Add extension', 'primary', () => openEditor(ctx, { type: TYPES.EXTENSION }))
   );
   bar.appendChild(button('⚙ Settings', 'small', () => ctx.send({ type: MSG.OPEN_OPTIONS })));
 
@@ -60,17 +58,10 @@ function button(label, className, handler) {
 // ---------------------------------------------------------------------------
 
 export async function moveItem(ctx, itemId, delta) {
-  const next = structuredClone(ctx.state.catalog);
-  for (const section of next.sections) {
-    const index = section.items.findIndex((item) => item.id === itemId);
-    if (index === -1) continue;
-    const target = index + delta;
-    if (target < 0 || target >= section.items.length) return;
-    const [moved] = section.items.splice(index, 1);
-    section.items.splice(target, 0, moved);
-    if (await ctx.save(next)) ctx.toast('Order saved to the sheet.');
-    return;
-  }
+  const items = moveWithinSection(ctx.state.catalog, itemId, delta);
+  if (!items) return;
+  const next = { ...structuredClone(ctx.state.catalog), items };
+  if (await ctx.save(next)) ctx.toast('Order saved to the sheet.');
 }
 
 // ---------------------------------------------------------------------------
@@ -78,26 +69,23 @@ export async function moveItem(ctx, itemId, delta) {
 // ---------------------------------------------------------------------------
 
 export function openEditor(ctx, options = {}) {
-  const found = options.itemId ? locate(ctx.state.catalog, options.itemId) : null;
-  editingId = found ? found.item.id : null;
+  const existing = options.itemId ? findItem(ctx.state.catalog, options.itemId) : null;
+  editingId = existing ? existing.id : null;
 
-  const item = found
-    ? found.item
-    : {
-        name: '',
-        description: '',
-        icon: options.type === TYPES.APP ? 'app' : 'link',
-        type: options.type || TYPES.APP,
-        target: '',
-        openIn: 'tab',
-        installLink: '',
-        enabled: true
-      };
-  const sectionName = found
-    ? found.section.name
-    : options.section || (ctx.state.catalog.sections[0] || {}).name || 'Tools';
+  const item = existing || {
+    name: '',
+    description: '',
+    icon: options.type === TYPES.APP ? 'app' : 'link',
+    type: options.type || TYPES.APP,
+    target: '',
+    openIn: 'tab',
+    installLink: '',
+    enabled: true
+  };
 
-  $('#item-title').textContent = found ? 'Edit tool' : 'Add a tool';
+  $('#item-title').textContent = existing
+    ? 'Edit tool'
+    : `Add to ${sectionNameFor(item.type)}`;
   $('#f-name').value = item.name;
   $('#f-description').value = item.description;
   $('#f-type').value = item.type;
@@ -105,13 +93,11 @@ export function openEditor(ctx, options = {}) {
   $('#f-extension-id').value = item.type === TYPES.APP ? '' : item.target;
   $('#f-open-in').value = item.openIn;
   $('#f-install').value = item.installLink;
-  $('#f-section').value = sectionName;
   $('#f-enabled').checked = item.enabled !== false;
 
   fillIcons(ctx, item.icon);
-  fillSections(ctx);
 
-  $('#btn-delete').hidden = !found;
+  $('#btn-delete').hidden = !existing;
   $('#item-error').hidden = true;
   $('#item-modal').hidden = false;
   syncFields();
@@ -143,16 +129,6 @@ function fillIcons(ctx, selected) {
   select.value = selected;
 }
 
-function fillSections(ctx) {
-  const list = $('#section-list');
-  list.replaceChildren();
-  for (const section of ctx.state.catalog.sections) {
-    const option = document.createElement('option');
-    option.value = section.name;
-    list.appendChild(option);
-  }
-}
-
 /** Show only the fields that matter for the chosen type. */
 function syncFields() {
   const type = $('#f-type').value;
@@ -182,9 +158,6 @@ async function submit(event, ctx) {
     }
   }
 
-  const sectionName = $('#f-section').value.trim();
-  if (!sectionName) return fail(error, 'Give the tool a section.');
-
   const payload = {
     id: editingId || newId('item'),
     name: $('#f-name').value.trim(),
@@ -198,28 +171,12 @@ async function submit(event, ctx) {
   };
 
   const next = structuredClone(ctx.state.catalog);
+  const at = next.items.findIndex((entry) => entry.id === editingId);
 
-  // Drop the old copy wherever it lived, in case the section changed.
-  if (editingId) {
-    for (const section of next.sections) {
-      const index = section.items.findIndex((entry) => entry.id === editingId);
-      if (index !== -1) {
-        section.items.splice(index, 1);
-        break;
-      }
-    }
-  }
-
-  let section = next.sections.find((entry) => entry.name === sectionName);
-  if (!section) {
-    section = { id: newId('sec'), name: sectionName, items: [] };
-    next.sections.push(section);
-  }
-  section.items.push(payload);
-
-  // Sections left empty by a move would vanish from the sheet anyway, since the
-  // sheet stores rows, not groups.
-  next.sections = next.sections.filter((entry) => entry.items.length);
+  if (at === -1) next.items.push(payload);
+  // Editing in place keeps the tool where it sits, even if its type changed —
+  // the section it appears in follows the type on its own.
+  else next.items[at] = payload;
 
   setBusy(true);
   const saved = await ctx.save(next);
@@ -235,14 +192,7 @@ async function remove(ctx) {
   if (!editingId) return;
 
   const next = structuredClone(ctx.state.catalog);
-  for (const section of next.sections) {
-    const index = section.items.findIndex((entry) => entry.id === editingId);
-    if (index !== -1) {
-      section.items.splice(index, 1);
-      break;
-    }
-  }
-  next.sections = next.sections.filter((entry) => entry.items.length);
+  next.items = next.items.filter((entry) => entry.id !== editingId);
 
   setBusy(true);
   const saved = await ctx.save(next);
@@ -261,14 +211,6 @@ function setBusy(busy) {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function locate(catalog, itemId) {
-  for (const section of catalog.sections) {
-    const item = section.items.find((entry) => entry.id === itemId);
-    if (item) return { section, item };
-  }
-  return null;
-}
 
 function fail(node, message) {
   node.textContent = message;

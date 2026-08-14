@@ -1,11 +1,14 @@
-// Catalog shape: normalising, validating, templating.
+// Catalog shape: normalising, validating, grouping, templating.
+//
+// The catalog is a flat list of tools. The drawer's two sections are derived
+// from each tool's type rather than stored, so a tool can never end up in the
+// wrong place or in a section that exists only because of a typo.
 //
 // Everything that reads a catalog runs it through normalizeCatalog() first, so
-// a half-filled spreadsheet row can never crash the panel — unknown values are
-// replaced with defaults rather than trusted.
+// a half-filled spreadsheet row can never crash the panel.
 
 import { DEFAULT_CATALOG } from './defaults.js';
-import { TYPES, BUILT_IN_ICONS } from './constants.js';
+import { TYPES, SECTIONS, BUILT_IN_ICONS } from './constants.js';
 
 function str(value, fallback = '') {
   return typeof value === 'string' ? value : fallback;
@@ -42,7 +45,7 @@ function normalizeItem(raw) {
     description: str(input.description),
     icon: normalizeIcon(input.icon, type),
     type,
-    // A link for an app, a 32-letter extension ID for the other two.
+    // A link for an app, a 32-letter extension ID for an extension.
     target: str(input.target).trim(),
     openIn: VALID_OPEN_IN.has(input.openIn) ? input.openIn : 'tab',
     installLink: str(input.installLink).trim(),
@@ -54,18 +57,10 @@ function normalizeIcon(value, type) {
   const icon = str(value).trim();
   if (!icon) return type === TYPES.APP ? 'app' : 'link';
   if (BUILT_IN_ICONS.includes(icon)) return icon;
-  // Anything else has to be an image URL we are willing to load.
+  // Anything else has to be an image we are willing to load. http: and
+  // javascript: must never reach an <img src>.
   if (/^https:\/\//i.test(icon) || /^data:image\//i.test(icon)) return icon;
   return type === TYPES.APP ? 'app' : 'link';
-}
-
-function normalizeSection(raw) {
-  const input = raw && typeof raw === 'object' ? raw : {};
-  return {
-    id: str(input.id) || newId('sec'),
-    name: str(input.name, 'Tools'),
-    items: Array.isArray(input.items) ? input.items.map(normalizeItem) : []
-  };
 }
 
 export function normalizeCatalog(raw) {
@@ -79,8 +74,27 @@ export function normalizeCatalog(raw) {
       title: str(branding.title, DEFAULT_CATALOG.branding.title),
       subtitle: str(branding.subtitle, DEFAULT_CATALOG.branding.subtitle)
     },
-    sections: Array.isArray(input.sections) ? input.sections.map(normalizeSection) : []
+    items: Array.isArray(input.items) ? input.items.map(normalizeItem) : []
   };
+}
+
+/**
+ * The two fixed sections, in display order, each holding the tools of its type.
+ * Order within a section follows the order of the flat list, which is the order
+ * of the rows in the sheet.
+ */
+export function groupItems(catalog) {
+  return SECTIONS.map((section) => ({
+    key: section.key,
+    name: section.name,
+    items: catalog.items.filter((item) => item.type === section.key)
+  }));
+}
+
+/** The name of the section a tool belongs to, for labels and messages. */
+export function sectionNameFor(type) {
+  const section = SECTIONS.find((entry) => entry.key === type);
+  return section ? section.name : 'Tools';
 }
 
 /**
@@ -99,15 +113,7 @@ export function usesTemplate(template) {
 }
 
 export function findItem(catalog, itemId) {
-  for (const section of catalog.sections) {
-    const item = section.items.find((entry) => entry.id === itemId);
-    if (item) return item;
-  }
-  return null;
-}
-
-export function isExtensionType(type) {
-  return type === TYPES.EXTENSION_MESSAGE || type === TYPES.EXTENSION_PAGE;
+  return catalog.items.find((item) => item.id === itemId) || null;
 }
 
 /** Chrome extension IDs are exactly 32 letters, a–p. */
@@ -115,6 +121,34 @@ export function isValidExtensionId(value) {
   return /^[a-p]{32}$/.test(String(value || '').trim());
 }
 
-export function countItems(catalog) {
-  return catalog.sections.reduce((total, section) => total + section.items.length, 0);
+/**
+ * Move a tool up or down within its own section, and return the reordered flat
+ * list. Positions are relative to the section the teammate can see, so the
+ * arrows do what they appear to do even though the list underneath is flat.
+ */
+export function moveWithinSection(catalog, itemId, delta) {
+  const item = findItem(catalog, itemId);
+  if (!item) return null;
+
+  const sameType = catalog.items.filter((entry) => entry.type === item.type);
+  const at = sameType.indexOf(item);
+  const to = at + delta;
+  if (to < 0 || to >= sameType.length) return null;
+
+  const reordered = sameType.slice();
+  reordered.splice(at, 1);
+  reordered.splice(to, 0, item);
+
+  // Rebuild the flat list, putting the reordered group back into the slots its
+  // members occupied so tools of the other type keep their places.
+  const slots = [];
+  catalog.items.forEach((entry, index) => {
+    if (entry.type === item.type) slots.push(index);
+  });
+
+  const next = catalog.items.slice();
+  slots.forEach((slot, index) => {
+    next[slot] = reordered[index];
+  });
+  return next;
 }

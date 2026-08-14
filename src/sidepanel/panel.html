@@ -161,9 +161,8 @@
           <label>
             <span>What the button does</span>
             <select id="f-type">
-              <option value="app">Open a link (web app)</option>
-              <option value="extensionMessage">Send a message to an extension</option>
-              <option value="extensionPage">Open an extension's page</option>
+              <option value="app">Web app — opens a link</option>
+              <option value="extension">Extension — opens one of ours</option>
             </select>
           </label>
 
@@ -177,16 +176,16 @@
             teammate is on.
           </p>
 
-          <label data-when="extensionMessage extensionPage">
+          <label data-when="extension">
             <span>Extension ID</span>
             <input id="f-extension-id" type="text" placeholder="32 letters, a–p" />
           </label>
-          <p class="hint" data-when="extensionMessage extensionPage">
+          <p class="hint" data-when="extension">
             From <code>chrome://extensions</code> with developer mode on. The target extension
             must list this one under <code>externally_connectable</code>.
           </p>
 
-          <label data-when="app extensionPage">
+          <label data-when="app">
             <span>Open in</span>
             <select id="f-open-in">
               <option value="tab">New tab</option>
@@ -195,7 +194,7 @@
             </select>
           </label>
 
-          <label data-when="extensionMessage extensionPage">
+          <label data-when="extension">
             <span>Install link, shown when it is missing</span>
             <input id="f-install" type="text" placeholder="https://chromewebstore.google.com/…" />
           </label>
@@ -205,11 +204,6 @@
             <select id="f-icon"></select>
           </label>
 
-          <label>
-            <span>Section</span>
-            <input id="f-section" type="text" list="section-list" maxlength="40" required />
-            <datalist id="section-list"></datalist>
-          </label>
 
           <label class="check">
             <input id="f-enabled" type="checkbox" checked />

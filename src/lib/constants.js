@@ -30,11 +30,17 @@ export const MSG = {
 
 export const ALARM_SYNC = 'td-sync';
 
+// Two kinds of tool, and one fixed section for each. A tool's section is
+// decided by what it is, not by a column someone can mistype.
 export const TYPES = {
   APP: 'app',
-  EXTENSION_MESSAGE: 'extensionMessage',
-  EXTENSION_PAGE: 'extensionPage'
+  EXTENSION: 'extension'
 };
+
+export const SECTIONS = [
+  { key: TYPES.EXTENSION, name: 'Extensions' },
+  { key: TYPES.APP, name: 'Web Apps' }
+];
 
 // Icons bundled with the extension. The sheet's Icon column takes one of these
 // names, or an https:// image URL for anything else.
