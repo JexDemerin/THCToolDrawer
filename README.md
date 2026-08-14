@@ -117,6 +117,7 @@ tools/render-icons.mjs     renders icon.svg to the PNG sizes Chrome needs
 tools/test.mjs             tests for the logic modules
 docs/SHEET-SETUP.md        spreadsheet and script setup
 docs/PUBLISHING.md         publishing all three extensions, in order
+docs/STORE-LISTING.md      listing, privacy and distribution copy to paste in
 docs/DEPLOY.md             getting it onto the team's machines
 ```
 

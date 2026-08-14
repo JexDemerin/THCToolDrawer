@@ -150,6 +150,10 @@ listing.
 For each of the three: **Store listing** → fill in a description and a screenshot
 → **Privacy** → explain the permissions → **Distribution** → set visibility.
 
+**The copy for all three is written out in [STORE-LISTING.md](STORE-LISTING.md)** —
+descriptions, single-purpose statements, a justification for every permission,
+and what to tick under data usage. Paste from there rather than writing it fresh.
+
 | Choice | Who can install |
 | --- | --- |
 | **Private** | Only people in your Google Workspace. Best if all three are internal. |
