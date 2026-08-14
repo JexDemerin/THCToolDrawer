@@ -64,10 +64,11 @@ For each extension: **Add new item** → drop in the zip → wait for it to proc
 
 ## Step 3 — Get the three IDs
 
-This is the part you asked about, and there are two easy places to find it.
+An extension's ID is assigned the moment you **first upload it**, and it never
+changes afterwards — not when you publish, not on later versions. So a draft
+already has its final ID, which is what makes this order work.
 
-**From the dashboard (before publishing):** open the item, and look at the
-browser's address bar:
+**Do this one.** Open the item in the dashboard and look at the address bar:
 
 ```
 https://chrome.google.com/webstore/devconsole/….../abcdefghijklmnopabcdefghijklmnop/edit
@@ -78,9 +79,10 @@ That long string of letters between the slashes is the extension's ID. Copy it.
 Every ID is exactly 32 characters and uses only the letters **a** to **p** — no
 numbers. If you see a digit, you've grabbed the wrong part of the URL.
 
-**From Chrome (after installing):** go to `chrome://extensions`, switch on
-**Developer mode** (top-right), and each card shows `ID: abcdefgh…` underneath
-its name.
+*(The same number also appears at `chrome://extensions` under an installed
+extension's name, with **Developer mode** switched on. That's an alternative
+place to read it once something is installed — not a second step, and not
+something you need now while everything is still a draft.)*
 
 Write all three down:
 
