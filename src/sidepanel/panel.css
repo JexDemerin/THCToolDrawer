@@ -139,7 +139,20 @@ body {
   background: rgba(255, 255, 255, 0.3);
 }
 
-.head-btn.spinning {
+.head-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Only the glyph spins, in its own inline element — spinning the button
+   itself would carry its square background and corners around too, which
+   reads as the button wobbling rather than a smooth refresh icon. */
+.head-btn .spin-icon {
+  display: inline-block;
+}
+
+.head-btn.spinning .spin-icon {
   animation: spin 700ms linear infinite;
 }
 
