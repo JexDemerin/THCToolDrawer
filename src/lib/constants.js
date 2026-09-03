@@ -52,6 +52,7 @@ export const BUILT_IN_ICONS = [
   'board',
   'intake',
   'report',
+  'map',
   'link',
   'app'
 ];

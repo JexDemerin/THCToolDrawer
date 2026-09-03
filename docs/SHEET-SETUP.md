@@ -123,8 +123,8 @@ Row order sets button order within a section. Move a row to move a button.
 **Open In** — `tab`, `popup`, or `current`. Web apps only; extensions ignore it.
 
 **Icon** — one of the bundled names: `drawer`, `scanner`, `verify`, `blaster`,
-`board`, `intake`, `report`, `link`, `app`. Or an `https://` link to an image of
-your own.
+`board`, `intake`, `report`, `map`, `link`, `app`. Or an `https://` link to an
+image of your own.
 
 **Install Link** — where to send someone whose copy of an extension is missing.
 
