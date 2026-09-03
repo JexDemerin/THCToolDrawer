@@ -88,7 +88,7 @@ async function pullCatalog({ force = false } = {}) {
   }
 
   const local = await getCatalog();
-  if (!force && remote.version <= local.version && local.sections.length) {
+  if (!force && remote.version <= local.version && local.items.length) {
     await setMeta({ lastSyncAt: Date.now(), lastSyncError: null, version: remote.version });
     return { status: 'current', version: remote.version };
   }

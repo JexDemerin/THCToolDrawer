@@ -20,7 +20,7 @@ export const DEFAULT_CATALOG = {
     title: 'Tool Drawer',
     subtitle: 'Together Homecare'
   },
-  sections: []
+  items: []
 };
 
 export const DEFAULT_META = {
